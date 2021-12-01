@@ -62,7 +62,7 @@ def GN(mopt, data, init_coef):
     print('With initial point :',init_coef)
 
     fk,Jk = models(mopt, init_coef[:,0], data[:,:3])
-    rk = (fk-data[:,3:4])**2
+    rk = fk-data[:,3:4]
     GRAPH.append(norm(rk))
 
     JTJ = np.matmul(Jk.T, Jk)
@@ -72,13 +72,13 @@ def GN(mopt, data, init_coef):
     coef = init_coef + pk
 
     for itr in range(ITR):
-        if norm(rk) < E or abs(pk[0]).sum() < E:
+        if (rk**2).sum() < E or abs(pk).sum() < E:
             print('Converged')
-            print('Result :',coef, ', residual : ', norm(rk), ', Itr : ', itr+1)
+            print('Result :',coef, ', residual : ', (rk**2).sum(), ', Itr : ', itr+1)
             return coef, itr+1
 
         fk,Jk = models(mopt, coef[:,0], data[:,:3])
-        rk = (fk-data[:,3:4])**2
+        rk = fk-data[:,3:4]
         GRAPH.append(norm(rk))
 
         JTJ = np.matmul(Jk.T, Jk)
@@ -87,7 +87,7 @@ def GN(mopt, data, init_coef):
         coef = coef + pk
 
     print('Terminated before criterion converge')
-    print('Result :',coef, ', residual : ', norm(rk), 'Itr : ', itr+1)
+    print('Result :',coef, ', residual : ', (rk**2).sum(), 'Itr : ', itr+1)
     print(GRAPH)
     return coef, ITR
 
@@ -106,7 +106,7 @@ def LM(mopt, data, init_coef, la):
     print('With initial point :',init_coef)
 
     fk,Jk = models(mopt, init_coef[:,0], data[:,:3])
-    rk = (fk-data[:,3:4])**2
+    rk = fk-data[:,3:4]
     GRAPH.append(norm(rk))
 
     JTr = np.matmul(Jk.T, rk)
@@ -130,13 +130,13 @@ def LM(mopt, data, init_coef, la):
     coef = init_coef + 0.001*pk
 
     for itr in range(ITR):
-        if norm(rk) < E or abs(pk[0]).sum() < E < E:
+        if (rk**2).sum() < E or abs(pk).sum() < E:
             print('Converged')
-            print('Result :',coef, ', residual : ', norm(rk), ', Itr : ', itr+1)
+            print('Result :',coef, ', residual : ', (rk**2).sum(), ', Itr : ', itr+1)
             return coef, itr+1
 
         fk,Jk = models(mopt, coef[:,0], data[:,:3])
-        rk = (fk-data[:,3:4])**2
+        rk = fk-data[:,3:4]
         GRAPH.append(norm(rk))
 
         JTr = np.matmul(Jk.T, rk)
@@ -160,8 +160,7 @@ def LM(mopt, data, init_coef, la):
         coef = coef + 0.001*pk
 
     print('Terminated before criterion converge')
-    print('Result :',coef, 'Itr : ', itr+1)
-    print(GRAPH)
+    print('Result :',coef, ', residual : ', (rk**2).sum(), 'Itr : ', itr+1)
     return coef, ITR
 
 def main(args):
@@ -169,7 +168,7 @@ def main(args):
     print('mopt :', args.model_opt,', method :', args.method)
 
     # initial values
-    init_coef = np.zeros((4,1))
+    init_coef = np.ones((4,1))*0
     la = 100
 
     # loading data
@@ -204,10 +203,10 @@ if __name__ == '__main__':
         '--model-opt', type=int, default=0,
         help='choosing built-in functions')
     parser.add_argument(
-        '--method', type=str, default='LM',
+        '--method', type=str, default='GN',
         help='choosing methods')
     args = parser.parse_args()
-    # possible method : 'CG', 'nonlinearCG'
+    # possible method : 'GN', 'LM'
 
     # main function
     result_coef = main(args)
